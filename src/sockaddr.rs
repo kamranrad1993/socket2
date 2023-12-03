@@ -23,6 +23,9 @@ pub struct SockAddr {
     len: socklen_t,
 }
 
+impl Copy for SockAddr{}
+
+
 #[allow(clippy::len_without_is_empty)]
 impl SockAddr {
     /// Create a `SockAddr` from the underlying storage and its length.

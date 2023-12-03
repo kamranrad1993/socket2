@@ -14,6 +14,7 @@ use std::mem::MaybeUninit;
 #[cfg(not(target_os = "nto"))]
 use std::net::Ipv6Addr;
 use std::net::{self, Ipv4Addr, Shutdown};
+use std::os::fd::AsRawFd;
 #[cfg(unix)]
 use std::os::unix::io::{FromRawFd, IntoRawFd};
 #[cfg(windows)]
@@ -73,11 +74,20 @@ use crate::{MaybeUninitSlice, MsgHdr, RecvFlags};
 /// # Ok(()) }
 /// ```
 pub struct Socket {
-    inner: Inner,
+    // inner: Inner,
+    inner : c_int
 }
 
 /// Store a `TcpStream` internally to take advantage of its niche optimizations on Unix platforms.
 pub(crate) type Inner = std::net::TcpStream;
+
+impl Copy for Socket{}
+
+impl Clone for Socket {
+    fn clone(&self) -> Self {
+        Self { inner: self.inner.clone() }
+    }
+}
 
 impl Socket {
     /// # Safety
@@ -104,17 +114,17 @@ impl Socket {
                 // `assert!`.
                 #[cfg(unix)]
                 assert!(raw >= 0, "tried to create a `Socket` with an invalid fd");
-                sys::socket_from_raw(raw)
+                sys::socket_from_raw(raw).as_raw_fd()
             },
         }
     }
 
     pub(crate) fn as_raw(&self) -> sys::Socket {
-        sys::socket_as_raw(&self.inner)
+        self.inner as sys::Socket
     }
 
     pub(crate) fn into_raw(self) -> sys::Socket {
-        sys::socket_into_raw(self.inner)
+        self.inner as sys::Socket
     }
 
     /// Creates a new socket and sets common flags.
